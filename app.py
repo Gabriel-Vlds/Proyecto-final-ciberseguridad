@@ -6,7 +6,7 @@ from functools import wraps
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, abort, jsonify, redirect, render_template, request, session, url_for
+from flask import Flask, abort, jsonify, make_response, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
@@ -117,6 +117,8 @@ def enforce_csrf():
 
 @app.after_request
 def add_security_headers(response):
+    if request.endpoint == "buscar":
+        return response  # ANTES (vulnerable): sin CSP en esta ruta
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; style-src 'self'; img-src 'self' data:; "
         "form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
@@ -181,6 +183,21 @@ def dashboard():
         patients=[dict(patient) for patient in patients],
         csrf_token=session["csrf_token"],
     )
+
+
+@app.get("/buscar")
+@require_login
+def buscar():
+    q = request.args.get("q", "")
+    connection = get_db()
+    rows = connection.execute(
+        "SELECT patient_code, full_name FROM patients WHERE full_name LIKE ?",
+        (f"%{q}%",),
+    ).fetchall()
+    connection.close()
+    items = "".join(f"<li>{r['patient_code']} - {r['full_name']}</li>" for r in rows)
+    # VULNERABLE: q se inserta tal cual en el HTML (XSS reflejado)
+    return make_response(f"<h1>Resultados para: {q}</h1><ul>{items}</ul>")
 
 
 @app.post("/logout")
