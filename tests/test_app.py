@@ -3,7 +3,7 @@ import unittest
 from app import app, DEMO_PASSWORD, DEMO_USERNAME
 
 
-class DemoBankTests(unittest.TestCase):
+class ClinicPortalTests(unittest.TestCase):
     def setUp(self):
         app.config["TESTING"] = True
         self.client = app.test_client()
@@ -34,12 +34,15 @@ class DemoBankTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.get("/dashboard").status_code, 200)
-        self.assertEqual(self.client.get("/api/accounts").json["accounts"][0]["number"], "•••• •••• •••• 4821")
+        self.assertIn("Mariana Torres", self.client.get("/dashboard").get_data(as_text=True))
+        self.assertIn("Carlos Vega", self.client.get("/dashboard").get_data(as_text=True))
+        self.assertEqual(len(self.client.get("/api/resultados").json["resultados"]), 2)
+        self.assertEqual(self.client.get("/api/resultados/1").json["patient_name"], "Mariana Torres")
         with self.client.session_transaction() as session:
             token = session["csrf_token"]
         response = self.client.post("/logout", data={"csrf_token": token})
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(self.client.get("/api/accounts").status_code, 302)
+        self.assertEqual(self.client.get("/api/resultados").status_code, 302)
 
     def test_post_without_csrf_token_is_rejected(self):
         response = self.client.post("/login", data={"username": DEMO_USERNAME, "password": DEMO_PASSWORD})
@@ -53,7 +56,7 @@ class DemoBankTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn("incorrectos", response.get_data(as_text=True))
-        self.assertEqual(self.client.get("/api/accounts").status_code, 302)
+        self.assertEqual(self.client.get("/api/resultados").status_code, 302)
 
 
 if __name__ == "__main__":

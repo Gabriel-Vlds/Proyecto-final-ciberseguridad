@@ -5,3 +5,4 @@ __pycache__/
 .env.*
 !.env.example
 zap-report.html
+clinica.db

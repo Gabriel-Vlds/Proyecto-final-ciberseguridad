@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Acceso | Banco Horizonte Demo</title>
+  <title>Acceso | Portal de resultados de la Clínica Diagnóstica Norte</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body class="login-page">
   <main class="login-card">
     <p class="eyebrow">ENTORNO DE PRACTICA · DATOS FICTICIOS</p>
-    <h1>Banco Horizonte</h1>
-    <p class="muted">Accede a tu banca de demostracion.</p>
+    <h1>Clínica Diagnóstica Norte</h1>
+    <p class="muted">Accede al portal de resultados clínicos.</p>
     {% if error %}<p class="alert" role="alert">{{ error }}</p>{% endif %}
     <form method="post" action="{{ url_for('login') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

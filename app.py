@@ -1,10 +1,13 @@
 import hmac
 import os
 import secrets
+import sqlite3
 from functools import wraps
+from pathlib import Path
 
 from dotenv import load_dotenv
 from flask import Flask, abort, jsonify, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
 
@@ -25,27 +28,66 @@ app.config.update(
 
 DEMO_USERNAME = os.environ["DEMO_USERNAME"]
 DEMO_PASSWORD = os.environ["DEMO_PASSWORD"]
+DATABASE_PATH = Path(os.environ.get("DATABASE_PATH", Path(__file__).with_name("clinica.db")))
+SCHEMA_PATH = Path(__file__).with_name("schema.sql")
 
-ACCOUNTS = [
-    {
-        "type": "Cuenta de cheques",
-        "number": "•••• •••• •••• 4821",
-        "balance": 8420.65,
-        "currency": "USD",
-    },
-    {
-        "type": "Cuenta de ahorros",
-        "number": "•••• •••• •••• 9073",
-        "balance": 15350.20,
-        "currency": "USD",
-    },
-]
 
-TRANSACTIONS = [
-    {"date": "2026-04-18", "description": "Supermercado Central", "amount": -68.42},
-    {"date": "2026-04-16", "description": "Deposito de nomina", "amount": 2450.00},
-    {"date": "2026-04-14", "description": "Cafe del Parque", "amount": -12.80},
-]
+def get_db():
+    connection = sqlite3.connect(DATABASE_PATH)
+    connection.row_factory = sqlite3.Row
+    return connection
+
+
+def init_database():
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    connection = get_db()
+    connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
+
+    connection.execute(
+        """
+        INSERT OR IGNORE INTO users (username, password_hash, full_name, role)
+        VALUES (?, ?, ?, ?)
+        """,
+        (DEMO_USERNAME, generate_password_hash(DEMO_PASSWORD), "Equipo de diagnóstico Norte", "staff"),
+    )
+    connection.execute(
+        """
+        INSERT OR IGNORE INTO users (username, password_hash, full_name, role)
+        VALUES (?, ?, ?, ?)
+        """,
+        ("laboratorio", generate_password_hash("LaboratorioNorte!2026"), "Dra. Laura Mendez", "staff"),
+    )
+
+    patients = (
+        (1, "PAC-001", "Mariana Torres", "1988-03-14", "Hemograma completo"),
+        (2, "PAC-002", "Carlos Vega", "1975-09-27", "Perfil metabólico"),
+    )
+    connection.executemany(
+        """
+        INSERT OR IGNORE INTO patients
+            (id, patient_code, full_name, birth_date, study)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        patients,
+    )
+
+    results = (
+        (1, 1, "2026-11-20", "R1-R6", "Finalizado", "Sin hallazgos críticos. Resultados dentro de rangos de referencia."),
+        (2, 2, "2026-11-22", "R2-R6", "Finalizado", "Glucosa elevada. Se recomienda control médico y seguimiento."),
+    )
+    connection.executemany(
+        """
+        INSERT OR IGNORE INTO results
+            (id, patient_id, result_date, findings_code, status, summary)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        results,
+    )
+    connection.commit()
+    connection.close()
+
+
+init_database()
 
 
 def create_csrf_token():
@@ -98,12 +140,19 @@ def login():
     if request.method == "POST":
         username = request.form.get("username", "")
         password = request.form.get("password", "")
-        if hmac.compare_digest(username, DEMO_USERNAME) and hmac.compare_digest(
-            password, DEMO_PASSWORD
+        connection = get_db()
+        user = connection.execute(
+            "SELECT id, username, password_hash, full_name, role FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+        connection.close()
+        if user and hmac.compare_digest(username, user["username"]) and check_password_hash(
+            user["password_hash"], password
         ):
             session.clear()
             session["authenticated"] = True
-            session["customer_name"] = "Alex Rivera (cliente ficticio)"
+            session["user_id"] = user["id"]
+            session["customer_name"] = user["full_name"]
             create_csrf_token()
             return redirect(url_for("dashboard"))
         error = "Usuario o contrasena incorrectos."
@@ -115,11 +164,21 @@ def login():
 @app.get("/dashboard")
 @require_login
 def dashboard():
+    connection = get_db()
+    patients = connection.execute(
+        """
+        SELECT p.id, p.patient_code, p.full_name, p.birth_date, p.study,
+               r.id AS result_id, r.result_date, r.findings_code, r.status
+        FROM patients p
+        LEFT JOIN results r ON r.patient_id = p.id
+        ORDER BY p.id
+        """
+    ).fetchall()
+    connection.close()
     return render_template(
         "dashboard.html",
         customer_name=session["customer_name"],
-        accounts=ACCOUNTS,
-        transactions=TRANSACTIONS,
+        patients=[dict(patient) for patient in patients],
         csrf_token=session["csrf_token"],
     )
 
@@ -133,13 +192,44 @@ def logout():
 
 @app.get("/api/health")
 def health():
-    return jsonify(status="ok", service="demo-bank")
+    return jsonify(status="ok", service="portal-clinica-diagnostica-norte")
 
 
-@app.get("/api/accounts")
+@app.get("/api/resultados")
 @require_login
-def accounts():
-    return jsonify(accounts=ACCOUNTS)
+def results():
+    connection = get_db()
+    rows = connection.execute(
+        """
+        SELECT r.id, r.patient_id, p.patient_code, p.full_name AS patient_name,
+               r.result_date, r.findings_code, r.status, r.summary
+        FROM results r
+        JOIN patients p ON p.id = r.patient_id
+        ORDER BY r.id
+        """
+    ).fetchall()
+    connection.close()
+    return jsonify(resultados=[dict(row) for row in rows])
+
+
+@app.get("/api/resultados/<int:result_id>")
+@require_login
+def result_detail(result_id):
+    connection = get_db()
+    row = connection.execute(
+        """
+        SELECT r.id, r.patient_id, p.patient_code, p.full_name AS patient_name,
+               r.result_date, r.findings_code, r.status, r.summary
+        FROM results r
+        JOIN patients p ON p.id = r.patient_id
+        WHERE r.id = ?
+        """,
+        (result_id,),
+    ).fetchone()
+    connection.close()
+    if row is None:
+        abort(404)
+    return jsonify(dict(row))
 
 
 if __name__ == "__main__":

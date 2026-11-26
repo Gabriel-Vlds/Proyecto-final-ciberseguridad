@@ -3,48 +3,35 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Resumen | Banco Horizonte Demo</title>
+  <title>Resultados | Clínica Diagnóstica Norte</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="{{ url_for('dashboard') }}">Banco Horizonte <span>DEMO</span></a>
+    <a class="brand" href="{{ url_for('dashboard') }}">Clínica Diagnóstica Norte <span>DEMO</span></a>
     <form method="post" action="{{ url_for('logout') }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
       <button class="secondary-button" type="submit">Cerrar sesion</button>
     </form>
   </header>
   <main class="container">
-    <p class="eyebrow">PANEL DE DEMOSTRACION</p>
+    <p class="eyebrow">PORTAL DE RESULTADOS · DEMOSTRACIÓN</p>
     <h1>Hola, {{ customer_name }}</h1>
-    <p class="muted">Este panel usa informacion inventada. No representa cuentas ni operaciones reales.</p>
+    <p class="muted">Consulta los resultados ficticios asociados a los pacientes del laboratorio.</p>
 
-    <section aria-labelledby="accounts-title">
-      <h2 id="accounts-title">Tus cuentas</h2>
-      <div class="account-grid">
-        {% for account in accounts %}
-        <article class="account-card">
-          <p class="muted">{{ account.type }}</p>
-          <p class="account-number">{{ account.number }}</p>
-          <p class="balance">${{ "%.2f"|format(account.balance) }} <small>{{ account.currency }}</small></p>
-        </article>
-        {% endfor %}
-      </div>
-    </section>
-
-    <section aria-labelledby="transactions-title">
-      <h2 id="transactions-title">Movimientos recientes (ficticios)</h2>
+    <section aria-labelledby="patients-title">
+      <h2 id="patients-title">Pacientes y resultados</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Fecha</th><th>Descripcion</th><th class="amount">Importe</th></tr></thead>
+          <thead><tr><th>Paciente</th><th>Estudio</th><th>Fecha</th><th>Vulnerabilidades</th><th>Estado</th></tr></thead>
           <tbody>
-            {% for transaction in transactions %}
+            {% for patient in patients %}
             <tr>
-              <td>{{ transaction.date }}</td>
-              <td>{{ transaction.description }}</td>
-              <td class="amount {% if transaction.amount < 0 %}debit{% else %}credit{% endif %}">
-                ${{ "%.2f"|format(transaction.amount|abs) }}
-              </td>
+              <td>{{ patient.full_name }}<br><small>{{ patient.patient_code }}</small></td>
+              <td>{{ patient.study }}</td>
+              <td>{{ patient.result_date or "Pendiente" }}</td>
+              <td>{{ patient.findings_code or "-" }}</td>
+              <td>{% if patient.result_id %}<a href="{{ url_for('result_detail', result_id=patient.result_id) }}">{{ patient.status }}</a>{% else %}Sin resultado{% endif %}</td>
             </tr>
             {% endfor %}
           </tbody>

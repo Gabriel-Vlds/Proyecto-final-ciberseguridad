@@ -1,6 +1,6 @@
-# Laboratorio local: Flask y OWASP ZAP
+# Laboratorio local: Portal de resultados de la Clínica Diagnóstica Norte
 
-Aplicacion educativa que simula un inicio de sesion y un panel bancario. Todas las personas, cuentas, saldos y transacciones son inventados; no procesa dinero ni se conecta con ningun banco. Solo debe ejecutarse en el equipo local.
+Aplicación educativa que simula el acceso a un portal clínico ficticio y muestra los resultados de dos pacientes. La información almacenada en SQLite es demostrativa y no corresponde a historias clínicas reales. Solo debe ejecutarse en el equipo local.
 
 ## Requisitos
 
@@ -33,7 +33,8 @@ El archivo `.env` contiene la clave de sesion y las credenciales locales. Esta e
 | GET | `/dashboard` | Panel protegido; sin sesion redirige al login |
 | POST | `/logout` | Cierra la sesion (requiere token CSRF) |
 | GET | `/api/health` | JSON de estado, disponible sin autenticacion |
-| GET | `/api/accounts` | Cuentas ficticias, requiere autenticacion |
+| GET | `/api/resultados` | Lista los resultados ficticios; requiere autenticación |
+| GET | `/api/resultados/<id>` | Devuelve un resultado por identificador; requiere autenticación |
 
 Con el servidor iniciado, comprueba el estado en otra terminal:
 
