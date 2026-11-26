@@ -23,14 +23,13 @@
       <h2 id="patients-title">Pacientes y resultados</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Paciente</th><th>Estudio</th><th>Fecha</th><th>Vulnerabilidades</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Paciente</th><th>Estudio</th><th>Fecha</th><th>Estado</th></tr></thead>
           <tbody>
             {% for patient in patients %}
             <tr>
               <td>{{ patient.full_name }}<br><small>{{ patient.patient_code }}</small></td>
               <td>{{ patient.study }}</td>
               <td>{{ patient.result_date or "Pendiente" }}</td>
-              <td>{{ patient.findings_code or "-" }}</td>
               <td>{% if patient.result_id %}<a href="{{ url_for('result_detail', result_id=patient.result_id) }}">{{ patient.status }}</a>{% else %}Sin resultado{% endif %}</td>
             </tr>
             {% endfor %}

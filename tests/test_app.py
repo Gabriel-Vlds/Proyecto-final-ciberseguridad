@@ -34,8 +34,11 @@ class ClinicPortalTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertEqual(self.client.get("/dashboard").status_code, 200)
-        self.assertIn("Mariana Torres", self.client.get("/dashboard").get_data(as_text=True))
-        self.assertIn("Carlos Vega", self.client.get("/dashboard").get_data(as_text=True))
+        dashboard = self.client.get("/dashboard").get_data(as_text=True)
+        self.assertIn("Mariana Torres", dashboard)
+        self.assertIn("Carlos Vega", dashboard)
+        self.assertNotIn("Vulnerabilidades", dashboard)
+        self.assertNotIn("R1-R6", dashboard)
         self.assertEqual(len(self.client.get("/api/resultados").json["resultados"]), 2)
         self.assertEqual(self.client.get("/api/resultados/1").json["patient_name"], "Mariana Torres")
         with self.client.session_transaction() as session:
