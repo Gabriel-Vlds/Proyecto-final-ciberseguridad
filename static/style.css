@@ -1,0 +1,45 @@
+:root {
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #172b4d;
+  background: #f3f6fa;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; }
+.login-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
+.login-card { width: min(100%, 420px); padding: 36px; background: white; border-radius: 14px; box-shadow: 0 12px 40px #19345614; }
+h1 { margin: 8px 0; font-size: 1.8rem; }
+h2 { margin: 30px 0 14px; font-size: 1.2rem; }
+.eyebrow { color: #3974b8; font-size: .72rem; font-weight: 750; letter-spacing: .11em; }
+.muted, .hint { color: #65748b; }
+.hint { margin-top: 24px; font-size: .86rem; line-height: 1.7; }
+label { display: block; margin: 18px 0 7px; font-size: .9rem; font-weight: 650; }
+input:not([type="hidden"]) { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; }
+button { padding: 12px 16px; border: 0; border-radius: 7px; background: #145da0; color: white; font: inherit; font-weight: 650; cursor: pointer; }
+.login-card form > button { width: 100%; margin-top: 22px; }
+.secondary-button { padding: 9px 13px; background: #e8f0f8; color: #174b7a; }
+.alert { padding: 11px; border-radius: 6px; background: #fff0ef; color: #a42a22; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px max(24px, calc((100% - 1040px) / 2)); background: white; border-bottom: 1px solid #e1e8f0; }
+.topbar form { margin: 0; }
+.brand { color: #172b4d; font-weight: 750; text-decoration: none; }
+.brand span { margin-left: 6px; color: #3974b8; font-size: .7rem; }
+.container { width: min(100% - 40px, 1040px); margin: 38px auto; }
+.account-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.account-card { padding: 20px; background: white; border: 1px solid #e1e8f0; border-radius: 10px; }
+.account-card p { margin: 0 0 12px; }
+.account-number { color: #65748b; }
+.balance { font-size: 1.55rem; font-weight: 750; }
+.balance small { font-size: .8rem; color: #65748b; }
+.table-wrap { overflow-x: auto; background: white; border: 1px solid #e1e8f0; border-radius: 10px; }
+table { width: 100%; border-collapse: collapse; text-align: left; }
+th, td { padding: 14px 18px; border-bottom: 1px solid #edf1f5; }
+th { color: #65748b; font-size: .8rem; }
+.amount { text-align: right; }
+.debit { color: #a42a22; }
+.credit { color: #21744b; }
+@media (max-width: 520px) {
+  .login-card { padding: 26px; }
+  .topbar { padding: 14px 18px; }
+  .container { width: min(100% - 28px, 1040px); margin-top: 26px; }
+}
