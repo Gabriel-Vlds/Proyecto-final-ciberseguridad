@@ -6,3 +6,4 @@ __pycache__/
 !.env.example
 zap-report.html
 clinica.db
+logs/

@@ -13,7 +13,9 @@ CREATE TABLE IF NOT EXISTS patients (
     patient_code TEXT NOT NULL UNIQUE,
     full_name TEXT NOT NULL,
     birth_date TEXT NOT NULL,
-    study TEXT NOT NULL
+    study TEXT NOT NULL,
+    user_id INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS results (
