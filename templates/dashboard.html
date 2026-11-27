@@ -19,6 +19,12 @@
     <h1>Hola, {{ customer_name }}</h1>
     <p class="muted">Consulta los resultados ficticios asociados a los pacientes del laboratorio.</p>
 
+    <form method="get" action="{{ url_for('buscar') }}" class="search">
+      <label for="q">Buscar paciente</label>
+      <input id="q" name="q" type="search">
+      <button class="secondary-button" type="submit">Buscar</button>
+    </form>
+
     <section aria-labelledby="patients-title">
       <h2 id="patients-title">Pacientes y resultados</h2>
       <div class="table-wrap">

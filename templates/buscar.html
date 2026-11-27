@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Búsqueda | Clínica Diagnóstica Norte</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -11,6 +12,7 @@
     <ul>
       {% for r in rows %}<li>{{ r.patient_code }} - {{ r.full_name }}</li>{% endfor %}
     </ul>
+    <p><a href="{{ url_for('dashboard') }}">Volver al panel</a></p>
   </main>
 </body>
 </html>
