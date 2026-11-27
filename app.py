@@ -1,4 +1,6 @@
 import hmac
+import logging
+from logging.handlers import RotatingFileHandler
 import os
 import secrets
 import sqlite3
@@ -6,10 +8,17 @@ from functools import wraps
 from pathlib import Path
 
 from dotenv import load_dotenv
-from flask import Flask, abort, jsonify, make_response, redirect, render_template, request, session, url_for
+from flask import Flask, abort, jsonify, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
 load_dotenv()
+
+Path("logs").mkdir(exist_ok=True)
+_handler = RotatingFileHandler("logs/seguridad.log", maxBytes=100_000, backupCount=3, encoding="utf-8")
+_handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+security_log = logging.getLogger("seguridad")
+security_log.setLevel(logging.INFO)
+security_log.addHandler(_handler)
 
 required_settings = ("SECRET_KEY", "DEMO_USERNAME", "DEMO_PASSWORD")
 missing_settings = [name for name in required_settings if not os.environ.get(name)]
@@ -100,6 +109,7 @@ def require_login(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
         if not session.get("authenticated"):
+            security_log.warning("ACCESO_SIN_SESION ip=%s ruta=%s", request.remote_addr, request.path)
             return redirect(url_for("login"))
         return view(*args, **kwargs)
 
@@ -112,13 +122,12 @@ def enforce_csrf():
         expected = session.get("csrf_token", "")
         supplied = request.form.get("csrf_token", "")
         if not expected or not hmac.compare_digest(expected, supplied):
+            security_log.warning("CSRF_INVALIDO ip=%s ruta=%s", request.remote_addr, request.path)
             abort(400, description="Token CSRF invalido o ausente.")
 
 
 @app.after_request
 def add_security_headers(response):
-    if request.endpoint == "buscar":
-        return response  # ANTES (vulnerable): sin CSP en esta ruta
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; style-src 'self'; img-src 'self' data:; "
         "form-action 'self'; frame-ancestors 'none'; base-uri 'self'"
@@ -151,12 +160,14 @@ def login():
         if user and hmac.compare_digest(username, user["username"]) and check_password_hash(
             user["password_hash"], password
         ):
+            security_log.info("LOGIN_OK usuario=%r ip=%s", username, request.remote_addr)
             session.clear()
             session["authenticated"] = True
             session["user_id"] = user["id"]
             session["customer_name"] = user["full_name"]
             create_csrf_token()
             return redirect(url_for("dashboard"))
+        security_log.warning("LOGIN_FALLIDO usuario=%r ip=%s", username[:50], request.remote_addr)
         error = "Usuario o contrasena incorrectos."
 
     csrf_token = session.get("csrf_token") or create_csrf_token()
@@ -188,16 +199,17 @@ def dashboard():
 @app.get("/buscar")
 @require_login
 def buscar():
-    q = request.args.get("q", "")
+    q = request.args.get("q", "").strip()[:50]
+    if "<" in q or ">" in q:
+        security_log.warning("XSS_SOSPECHOSO ip=%s q=%r", request.remote_addr, q)
     connection = get_db()
     rows = connection.execute(
         "SELECT patient_code, full_name FROM patients WHERE full_name LIKE ?",
         (f"%{q}%",),
     ).fetchall()
     connection.close()
-    items = "".join(f"<li>{r['patient_code']} - {r['full_name']}</li>" for r in rows)
-    # VULNERABLE: q se inserta tal cual en el HTML (XSS reflejado)
-    return make_response(f"<h1>Resultados para: {q}</h1><ul>{items}</ul>")
+    # DESPUES: Jinja escapa {{ q }} y el CSP vuelve a aplicar
+    return render_template("buscar.html", q=q, rows=rows)
 
 
 @app.post("/logout")

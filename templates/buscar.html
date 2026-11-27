@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Búsqueda | Clínica Diagnóstica Norte</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <h1>Resultados para: {{ q }}</h1>
+    <ul>
+      {% for r in rows %}<li>{{ r.patient_code }} - {{ r.full_name }}</li>{% endfor %}
+    </ul>
+  </main>
+</body>
+</html>
