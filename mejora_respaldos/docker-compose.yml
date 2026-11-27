@@ -1,0 +1,27 @@
+# Laboratorio de respaldos (Opcion C): dos equipos ficticios en Docker.
+#  - servidor: tiene los expedientes (lectura y escritura) y ve las copias SOLO en lectura.
+#  - respaldo: lee los expedientes en solo lectura y es el unico que puede escribir las copias.
+services:
+  servidor:
+    image: alpine:3.20
+    container_name: clinica-servidor
+    command: sleep infinity
+    volumes:
+      - expedientes:/clinica
+      - copias:/respaldo:ro
+      - ./scripts:/scripts:ro
+
+  respaldo:
+    image: alpine:3.20
+    container_name: clinica-respaldo
+    command: sh -c "cp /scripts/crontab /etc/crontabs/root && crond -f -l 8"
+    volumes:
+      - expedientes:/clinica:ro
+      - copias:/respaldo
+      - restaurado:/restaurado
+      - ./scripts:/scripts:ro
+
+volumes:
+  expedientes:
+  copias:
+  restaurado:

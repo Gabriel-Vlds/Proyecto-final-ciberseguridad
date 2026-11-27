@@ -1,0 +1,5 @@
+# Produccion: incremental diario (lunes a sabado) y completo semanal (domingo), 02:00
+0 2 * * 1-6 sh /scripts/respaldo.sh incr
+0 2 * * 0 sh /scripts/respaldo.sh full
+# Solo para la demo (descomentar): una copia incremental cada minuto
+# * * * * * sh /scripts/respaldo.sh incr

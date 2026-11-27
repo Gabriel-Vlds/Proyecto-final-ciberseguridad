@@ -1,0 +1,3 @@
+# Los scripts corren en Alpine (Linux): deben conservar saltos de linea LF
+*.sh text eol=lf
+scripts/crontab text eol=lf
